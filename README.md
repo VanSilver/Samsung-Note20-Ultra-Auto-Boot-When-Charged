@@ -76,3 +76,14 @@ Khi tắt nguồn và cắm sạc, bootloader của Samsung sẽ gọi tiến tr
 * **An toàn:** Luôn giữ file `/system/bin/lpm.bak` để có thể khôi phục trạng thái xuất xưởng khi cần.
 
 ---
+
+## 3. Tài liệu tham khảo & Công cụ hỗ trợ (References)
+
+Để quản lý thiết bị toàn diện sau khi thiết lập Autoboot, bạn có thể tham khảo các tài liệu gốc sau:
+
+* **[Magisk (Topjohnwu)](https://github.com/topjohnwu/Magisk):** Nền tảng Root chính cho Android, cung cấp giao diện quản lý quyền Superuser và nạp các module hệ thống.
+* **[Magisk-Autoboot (Anasfanani)](https://github.com/anasfanani/magisk-autoboot):** Ý tưởng gốc về việc vá ramdisk để tự động khởi động (Dùng tham khảo logic cho các máy không phải Samsung).
+* **[Root Checker (Vineelsai26)](https://github.com/vineelsai26/Root-Checker):** Công cụ mã nguồn mở giúp xác nhận trạng thái Root và các biến môi trường hệ thống một cách chính xác.
+* **[GeneratePIF (x1337cn)](https://github.com/x1337cn/GeneratePIF):** Công cụ cần thiết nếu bạn sử dụng các dịch vụ yêu cầu xác thực **Play Integrity** (như ứng dụng ngân hàng, Google Wallet) trên máy đã root.
+
+---
