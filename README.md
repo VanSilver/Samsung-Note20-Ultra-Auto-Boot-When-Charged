@@ -1,72 +1,78 @@
-# Samsung-Note20-Ultra-boot-When-changre
+# Samsung Note 20 Ultra: Auto Boot When Charged
 
-Chào Van, để tiện cho việc lưu trữ và tái sử dụng cho các máy Samsung khác sau này, tôi đã tổng hợp toàn bộ quy trình thành một **Script tự động (.sh)** và một **File hướng dẫn (.md)**.
+Tài liệu hướng dẫn và Script tự động dành cho các dòng Samsung (đã thử nghiệm thành công trên Note 20 Ultra).
 
-Dưới đây là nội dung chi tiết:
+## ⚠️ Điều kiện tiên quyết (Bắt buộc)
+* **Thiết bị phải được Root bằng Magisk:** Đây là điều kiện tiên quyết để có thể chiếm quyền Superuser (`su`) và ghi dữ liệu vào phân vùng hệ thống (`/system`).
+* **Môi trường:** Máy tính đã cài đặt ADB Drivers và điện thoại đã bật *USB Debugging*.
 
-### 1. Script tự động (autoboot_setup.sh)
-Bạn có thể copy đoạn này, lưu thành file `.sh` và chạy trực tiếp từ máy tính qua lệnh `adb push`.
+---
+
+## 1. Script tự động thiết lập (`autoboot_setup.sh`)
+
+Bạn có thể tạo file này trên máy tính, đẩy vào điện thoại và chạy để tiết kiệm thời gian.
 
 ```bash
 #!/system/bin/sh
-# Script thiết lập Autoboot cho Samsung Rooted
+# Script thiết lập Autoboot cho Samsung (Tested on Note 20 Ultra)
+# Yêu cầu: Root bằng Magisk
 # Tác giả: Van - Embedded Developer
 
-echo "[+] Đang bắt đầu thiết lập Autoboot..."
+echo "[+] Đang kiểm tra quyền Root..."
+if [ "$(id -u)" -ne 0 ]; then
+    echo "[Lỗi] Vui lòng chạy script bằng quyền Root (su)!"
+    exit 1
+fi
 
-# 1. Chiếm quyền và remount
+echo "[+] Đang cấu hình hệ thống..."
 setenforce 0
 mount -o remount,rw /
 
-# 2. Xử lý file lpm
-if [ -f /system/bin/lpm ]; then
-    if [ ! -f /system/bin/lpm.bak ]; then
-        echo "[+] Đang sao lưu file lpm gốc..."
-        mv /system/bin/lpm /system/bin/lpm.bak
+# Đường dẫn file sạc của Samsung
+LPM_PATH="/system/bin/lpm"
+
+if [ -f "$LPM_PATH" ]; then
+    if [ ! -f "$LPM_PATH.bak" ]; then
+        echo "[+] Đang sao lưu file lpm gốc tại $LPM_PATH.bak"
+        mv "$LPM_PATH" "$LPM_PATH.bak"
     else
-        echo "[!] File lpm.bak đã tồn tại, bỏ qua bước sao lưu."
+        echo "[!] Bản sao lưu lpm.bak đã tồn tại, tiến hành ghi đè script mới."
     fi
 
-    # 3. Tạo file lpm mới để reboot
-    echo "[+] Đang tạo script reboot mới..."
-    echo "#!/system/bin/sh" > /system/bin/lpm
-    echo "/system/bin/reboot" >> /system/bin/lpm
+    echo "[+] Đang nạp script Autoboot..."
+    echo "#!/system/bin/sh" > "$LPM_PATH"
+    echo "/system/bin/reboot" >> "$LPM_PATH"
 
-    # 4. Cấp quyền
-    chmod 755 /system/bin/lpm
-    chown root:shell /system/bin/lpm
-    echo "[OK] Thiết lập thành công! Hãy tắt máy và thử cắm sạc."
+    echo "[+] Cấp quyền thực thi..."
+    chmod 755 "$LPM_PATH"
+    chown root:shell "$LPM_PATH"
+    
+    echo "[OK] Hoàn tất! Hãy tắt nguồn và cắm sạc để kiểm tra."
 else
-    echo "[Lỗi] Không tìm thấy file /system/bin/lpm. Kiểm tra lại dòng máy."
+    echo "[Lỗi] Không tìm thấy binary lpm tại $LPM_PATH. Có thể dòng máy này dùng cơ chế khác."
 fi
 ```
 
-### 2. File hướng dẫn kỹ thuật (README.md)
-
-
 ---
-# Hướng dẫn Kỹ thuật: Autoboot Samsung Note 20 Ultra
 
-## Cơ chế hoạt động
-Trên các dòng máy Samsung, khi cắm sạc lúc tắt nguồn, hệ thống sẽ thực thi file binary `/system/bin/lpm` để hiển thị hoạt ảnh sạc pin (LPM - Low Power Mode). Bằng cách thay thế binary này bằng một shell script thực hiện lệnh `reboot`, chúng ta ép thiết bị khởi động lại ngay khi nhận được nguồn cấp.
+## 2. Hướng dẫn kỹ thuật (README.md)
 
-## Các bước thực hiện nhanh (Quick Start)
+### Cơ chế hoạt động
+Khi tắt nguồn và cắm sạc, bootloader của Samsung sẽ gọi tiến trình `/system/bin/lpm` để hiển thị màn hình sạc. Việc thay thế binary này bằng một script chứa lệnh `/system/bin/reboot` sẽ đánh lừa hệ thống khởi động lại ngay lập tức thay vì dừng lại ở màn hình sạc.
 
-1. **Kết nối thiết bị:** `adb shell`
-2. **Chiếm quyền Root:** `su`
-3. **Mở khóa phân vùng:** `mount -o remount,rw /`
-4. **Thực thi lệnh đánh tráo:**
+### Các bước thực hiện thủ công nhanh
+1. **Truy cập:** `adb shell` -> `su`.
+2. **Mở khóa ghi:** `mount -o remount,rw /`.
+3. **Đánh tráo:**
    ```bash
    mv /system/bin/lpm /system/bin/lpm.bak
    echo -e "#!/system/bin/sh\n/system/bin/reboot" > /system/bin/lpm
    chmod 755 /system/bin/lpm
    ```
 
-## Lưu ý cho nhà phát triển hệ thống nhúng
-- **Tính bền vững:** Sau khi cập nhật hệ điều hành (OTA), file `lpm` sẽ bị Samsung ghi đè về mặc định. Cần chạy lại script này.
-- **Dòng điện:** Khi máy tự boot từ 0% pin, hãy đảm bảo nguồn cấp (Adapter/USB Port) có dòng ra tối thiểu **2A**. Nếu dòng quá yếu, máy sẽ rơi vào tình trạng sập nguồn liên tục do thiếu điện năng lúc khởi động (Peak power consumption).
-- **SELinux:** Luôn đảm bảo `setenforce 0` khi thực hiện thao tác để tránh các lỗi từ chối quyền truy cập từ kernel.
+### Lưu ý quan trọng cho dân Embedded
+* **Tính bền vững:** Cập nhật OTA sẽ ghi đè file này. Cần chạy lại script sau mỗi lần cập nhật firmware.
+* **Nguồn cấp:** Đảm bảo dòng ra của sạc ổn định (tối thiểu **2A**). Khi máy tự boot từ 0%, nếu nguồn yếu sẽ gây ra hiện tượng sập nguồn liên tục (Brown-out) do CPU tiêu thụ điện năng đạt đỉnh (Peak) lúc khởi động.
+* **An toàn:** Luôn giữ file `/system/bin/lpm.bak` để có thể khôi phục trạng thái xuất xưởng khi cần.
 
 ---
-
-Bản tổng hợp này giúp bạn có cái nhìn hệ thống hơn. Nếu bạn cần tích hợp script này vào một quy trình tự động hóa lớn hơn cho xưởng hoặc dự án Lab, cứ cho tôi biết nhé!
